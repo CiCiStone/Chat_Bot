@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多轮对话 Web 项目</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* 美化下拉菜单 */
+        #model-select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>对话</h2>
+        <ul id="dialog-list">
+            {% for dialog_id, dialog in dialogs.items() %}
+            <li data-id="{{ dialog_id }}" class="dialog-item{% if dialog_id == current_dialog_id %} active{% endif %}">
+                <div class="dialog-text">
+                    <span class="dialog-name">{{ dialog.name }}</span>
+                    <input type="text" class="rename-input" value="{{ dialog.name }}" style="display: none;">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="rename-dialog">重命名</button>
+                    <button class="delete-dialog">删除</button>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <button id="create-dialog">创建新对话</button>
+    </div>
+    <div class="main-container">
+        <h1>当前对话</h1>
+        <div>
+            <label for="model-select">选择模型：</label>
+            <select id="model-select">
+                {% for model in models %}
+                <option value="{{ model }}" {% if model == current_model %}selected{% endif %}>{{ model }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div id="conversation">
+            {% if current_dialog_id %}
+                {% for conv in dialogs[current_dialog_id]['conversations'] %}
+                <div class="dialogue-box {% if conv.role == 'user' %}user-message{% else %}bot-response{% endif %}">
+                    <p>{% if conv.role == 'user' %}你: {% else %}回复: {% endif %}{{ conv.content }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>请选择或创建一个对话。</p>
+            {% endif %}
+        </div>
+        <form id="message-form">
+            <input type="text" id="message-input" name="message" placeholder="输入你的消息">
+            <button type="submit">发送</button>
+        </form>
+    </div>
+    <script>
+        $(document).ready(function() {
+            // 创建新对话
+            $('#create-dialog').on('click', function() {
+                $.post('/create_dialog', function(data) {
+                    location.reload();
+                });
+            });
+
+            // 选择对话
+            $('.dialog-item').on('click', function() {
+                const dialogId = $(this).data('id');
+                $.post('/select_dialog', { dialog_id: dialogId }, function(data) {
+                    location.reload();
+                });
+            });
+
+            // 删除对话
+            $('.delete-dialog').on('click', function(event) {
+                event.stopPropagation();
+                const dialogId = $(this).closest('.dialog-item').data('id');
+                $.post('/delete_dialog', { dialog_id: dialogId }, function(data) {
+                    location.reload();
+                });
+            });
+
+            // 重命名对话
+            $('.rename-dialog').on('click', function(event) {
+                event.stopPropagation();
+                const dialogItem = $(this).closest('.dialog-item');
+                dialogItem.find('.dialog-name').hide();
+                dialogItem.find('.rename-input').show().focus();
+            });
+
+            $('.rename-input').on('blur', function() {
+                const dialogItem = $(this).closest('.dialog-item');
+                const newName = $(this).val();
+                const dialogId = dialogItem.data('id');
+                $.post('/rename_dialog', { dialog_id: dialogId, new_name: newName }, function(data) {
+                    location.reload();
+                });
+            });
+
+            // 发送消息
+            $('#message-form').on('submit', function(event) {
+                event.preventDefault();
+                const message = $('#message-input').val();
+                $.post('/send_message', { message: message }, function(data) {
+                    $('#conversation').append('<div class="dialogue-box user-message"><p>你: ' + data.message + '</p></div>');
+                    $('#conversation').append('<div class="dialogue-box bot-response"><p>回复: ' + data.response + '</p></div>');
+                    $('#message-input').val('');
+                });
+            });
+
+            // 选择模型
+            $('#model-select').on('change', function() {
+                const selectedModel = $(this).val();
+                $.post('/select_model', { model: selectedModel }, function(data) {
+                    if (data.success) {
+                        alert('模型已更改为 ' + data.current_model);
+                    } else {
+                        alert('模型更改失败: ' + data.error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
