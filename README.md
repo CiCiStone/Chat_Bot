@@ -15,10 +15,22 @@
 
 ![image](https://github.com/CiCiStone/Chat_Bot/assets/174783580/1c0ef82e-4a53-493c-82db-c2cd40e87f89)
 
+
 2.2环境配置
 
 本项目只使用了flask等包，已经制作了requirements.txt，只需要在terminal输入pip install -r requirements.txt然后等待依赖安装完成。
 
 3.运行项目
+
+3.1设置key
+
+本文建议创建key.txt来管理key，在主目录下创建一个key.txt文件，然后将申请的key写在第一行即可。
+
+当然，也可以直接在下面的代码内将key写死进变量
+
+![image](https://github.com/CiCiStone/Chat_Bot/assets/174783580/62e3cf6c-d7c4-48a1-aecb-a83c16d1c506)
+
+
+3.2运行
 
 本项目只需要运行app.py文件，然后在[127.0.0.1：5000](http://127.0.0.1:5000/)打开即可。
